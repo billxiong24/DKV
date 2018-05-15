@@ -17,7 +17,7 @@ part: $(SERVER_EX).$(CC_EXT) $(SERVER_EX).$(H_EXT) $(PART_EX).$(CC_EXT) $(PART_E
 	 g++ -o $(PART_EX) $(SERVER_EX).$(CC_EXT) $(PART_EX).$(CC_EXT) $(LK_REDIS)
 
 clean:
-	-rm KVServer KVPart
+	-rm $(PART_EX) $(SERVER_EX)
 
 
 

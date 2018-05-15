@@ -5,6 +5,8 @@
 KVServer::KVServer(char *host, int port, char *redis_host, int redis_port) : host(string(host)) {
     //this->context = redisConnect(redis_host, redis_port);
     this->hash = this->init_hash(host, port);
+    //insert self into map
+    this->servers.insert(std::pair<size_t, KVServer>(this->hash, *this));
 }
 
 size_t KVServer::get_hash() {
@@ -17,6 +19,14 @@ std::string KVServer::get_host() {
 
 int KVServer::get_port() {
     return this->port;
+}
+
+void KVServer::listen() {
+
+}
+
+void KVServer::send_membership() {
+
 }
 
 std::string KVServer::get(char *key) {

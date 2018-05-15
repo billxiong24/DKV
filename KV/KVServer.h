@@ -16,6 +16,8 @@ class KVServer {
         void put(char *key, char *value);
         std::string get_host();
         int get_port();
+        void listen();
+        void send_membership();
 
     private:
         size_t hash;
