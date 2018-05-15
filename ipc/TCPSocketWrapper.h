@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <functional>
+#include <iostream>
 
 #define PACKET_TERM '\0'
 
@@ -14,7 +15,7 @@ class TCPSocketWrapper {
     public:
         TCPSocketWrapper();
         void send_data(const void *buf, size_t len);
-        void read_data(std::function<void(TCPSocketWrapper, std::string)> data_func);
+        bool read_data(int read_fd, std::function<void(TCPSocketWrapper, std::string)> data_func);
 
     protected:
         int get_read_fd();

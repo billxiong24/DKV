@@ -1,4 +1,6 @@
 #include "TCPSocketWrapper.h"
+using namespace std;
+#define PACKET_TERM '\0'
 
 TCPSocketWrapper::TCPSocketWrapper() : read_fd(-1) {
 
@@ -12,22 +14,29 @@ void TCPSocketWrapper::set_read_fd(int fd) {
     this->read_fd = fd;
 }
 
-void TCPSocketWrapper::read_data(std::function<void(TCPSocketWrapper, std::string)> data_func) {
+bool TCPSocketWrapper::read_data(int read_fd, std::function<void(TCPSocketWrapper, std::string)> data_func) {
+
     char buffer[1];
-    buffer[0] = 1;
+    buffer[0] = -1;
 
     std::string res;
 
     while(buffer[0] != PACKET_TERM) {
-        if(read(this->read_fd, buffer, sizeof(buffer)) < 0) {
-            close(this->read_fd);
+        int num_read = read(read_fd, buffer, sizeof(buffer));
+        if(num_read < 0) {
+            close(read_fd);
+            //puts("exception throwing");
             throw "Failed to read from client.";
         }
-
+        else if(num_read == 0) {
+            close(read_fd);
+            return false;
+        }
         res += buffer[0];
     }
 
     data_func(*this, res);
+    return true;
 }
 
 void TCPSocketWrapper::send_data(const void *buf, size_t len) {

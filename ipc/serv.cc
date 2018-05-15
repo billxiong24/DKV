@@ -5,7 +5,7 @@ using namespace std;
 void data_func(TCPSocketWrapper serv, std::string res) {
 
     cout << res << endl;
-    serv.send_data("response\0", 10);
+    serv.send_data("response\0", 9);
 }
 
 int main(int argc, const char *argv[]) {

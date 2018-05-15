@@ -1,7 +1,6 @@
 #include "TCPServerWrapper.h"
 
 #define BACKLOG 20
-#define PACKET_TERM '\0'
 
 TCPServerWrapper::TCPServerWrapper(int port) : TCPSocketWrapper(), fd(-1), port(port) {
     memset(&address, 0, sizeof(address));
@@ -35,18 +34,32 @@ void TCPServerWrapper::start_server() {
 
 void TCPServerWrapper::recv_data(std::function<void(TCPSocketWrapper, std::string)> data_func) {
     int addrlen = sizeof(address);
+    int new_fd;
     while(true) {
-        int new_fd;
         if ((new_fd = accept(this->fd, (struct sockaddr *)&address, 
                         (socklen_t*)&addrlen))<0) {
+            return;
         }
 
-        this->set_read_fd(new_fd);
+        //[] include capture variables to include in the lambda
+        std::thread conn([this, new_fd, data_func] { 
+            while(true) {
+                this->set_read_fd(new_fd);
 
-        if(this->get_read_fd() < 0) {
-            throw "Invalid client file descriptor.";
-        }
+                if(this->get_read_fd() < 0) {
+                    throw "Invalid client file descriptor.";
+                }
 
-        this->read_data(data_func);
+                //if client closes connection, catch exception and exit thread
+                try {
+                    this->read_data(new_fd, data_func);
+                }
+                catch(char const*msg) {
+                    break;
+                }
+            }
+        });
+
+        conn.detach();
     }
 }

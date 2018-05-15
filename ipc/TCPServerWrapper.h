@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include <functional>
+#include <thread>
 #include "TCPSocketWrapper.h"
 
 class TCPServerWrapper : public TCPSocketWrapper {
@@ -23,6 +24,8 @@ class TCPServerWrapper : public TCPSocketWrapper {
         int port;
         int fd;
         struct sockaddr_in address;
+
+        //static void thread_func(TCPServerWrapper serv, int fd, std::function<void(TCPSocketWrapper, std::string)> data_func);
 
 };
 
