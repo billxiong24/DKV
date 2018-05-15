@@ -8,17 +8,21 @@
 #include <netinet/in.h>
 #include <string.h>
 
-class TCPServerWrapper {
+#include <functional>
+#include "TCPSocketWrapper.h"
+
+class TCPServerWrapper : public TCPSocketWrapper {
 
     public:
         TCPServerWrapper(int port);
 
         void start_server();
+        void recv_data(std::function<void(TCPSocketWrapper, std::string)> data_func);
 
     private:
         int port;
         int fd;
-
+        struct sockaddr_in address;
 
 };
 

@@ -7,13 +7,14 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <string>
+#include "TCPSocketWrapper.h"
 
-class TCPClientWrapper {
+class TCPClientWrapper : public TCPSocketWrapper {
     public:
         TCPClientWrapper();
         void conn(char *host, int port);
-        void send_data(const void *buf, size_t len);
-        void read_data();
+        //void send_data(const void *buf, size_t len);
 
     private:
         int sockfd;
