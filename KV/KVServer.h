@@ -7,6 +7,7 @@
 #include <hiredis/hiredis.h>
 #include "../address/Address.h"
 #include "../ipc/TCPClientWrapper.h"
+#include "../ipc/TCPServerWrapper.h"
 #include <iostream>
 #include <sstream>
 #include <vector>

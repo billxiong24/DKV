@@ -32,7 +32,7 @@ void TCPServerWrapper::start_server() {
     }
 }
 
-void TCPServerWrapper::recv_data(std::function<void(TCPSocketWrapper, std::string)> data_func) {
+void TCPServerWrapper::recv_data(void *arg, std::function<void(TCPSocketWrapper, void *, std::string)> data_func) {
     int addrlen = sizeof(address);
     int new_fd;
     while(true) {
@@ -42,7 +42,7 @@ void TCPServerWrapper::recv_data(std::function<void(TCPSocketWrapper, std::strin
         }
 
         //[] include capture variables to include in the lambda
-        std::thread conn([this, new_fd, data_func] { 
+        std::thread conn([this, new_fd, data_func, arg] { 
             while(true) {
                 this->set_read_fd(new_fd);
 
@@ -52,7 +52,7 @@ void TCPServerWrapper::recv_data(std::function<void(TCPSocketWrapper, std::strin
 
                 //if client closes connection, catch exception and exit thread
                 try {
-                    this->read_data(new_fd, data_func);
+                    this->read_cb(new_fd, arg, data_func);
                 }
                 catch(char const*msg) {
                     break;

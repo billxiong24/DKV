@@ -18,7 +18,7 @@ class TCPServerWrapper : public TCPSocketWrapper {
         TCPServerWrapper(int port);
 
         void start_server();
-        void recv_data(std::function<void(TCPSocketWrapper, std::string)> data_func);
+        void recv_data(void *arg, std::function<void(TCPSocketWrapper, void *, std::string)> data_func);
 
     private:
         int port;

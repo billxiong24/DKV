@@ -109,7 +109,8 @@ void KVServer::bootstrap(std::vector<KVServer> seeds) {
 }
 
 void KVServer::listen() {
-
+    TCPServerWrapper server(this->port);
+    server.start_server();
 }
 
 void KVServer::send_membership() {

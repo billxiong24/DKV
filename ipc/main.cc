@@ -14,8 +14,9 @@ void thread_func(char *host, int port) {
     cli.conn(host, port);
     while(true) {
         cli.send_data("erer\0", 5);
-        bool res = cli.recv_data(data_func);
-        if(!res) {
+        std::string res = cli.recv_data();
+        cout << res << endl;
+        if(res.empty()) {
             puts("cant receive data");
             break;
         }
