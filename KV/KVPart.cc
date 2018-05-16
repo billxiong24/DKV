@@ -8,8 +8,8 @@ void KVPart::send_to_seeds() {
     }
 }
 
-int main() {
-    std::vector<KVSeed> seeds;
-    auto d = new KVPart((char *) "127.0.0.1", 5000, (char *) "127.0.0.1", 6379, seeds);
-    d->send_to_seeds();
-}
+//int main() {
+    //std::vector<KVSeed> seeds;
+    //auto d = new KVPart((char *) "127.0.0.1", 5000, (char *) "127.0.0.1", 6379, seeds);
+    //d->send_to_seeds();
+//}

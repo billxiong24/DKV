@@ -7,7 +7,7 @@
 class KVPart : private KVServer {
     public:
         //calls KVServer constructor, assigns seeds to s
-        KVPart(char *host, int port, char *rhost, int rport, std::vector<KVSeed> s) : KVServer(host, port, rhost, rport), seeds(s) {}
+        KVPart(char *host, int port, std::vector<KVSeed> s) : KVServer(host, port), seeds(s) {}
 
         void send_to_seeds();
 

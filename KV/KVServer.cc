@@ -5,10 +5,11 @@
 size_t gen_hash(std::string host, int port);
 
 KVServer::KVServer(std::string host, int port) : host(string(host)), port(port) {
+
 }
 
 void KVServer::init(char *redis_host, int redis_port) {
-    this->context = redisConnect(redis_host, redis_port);
+    //this->context = redisConnect(redis_host, redis_port);
     this->hash = gen_hash(host, port);
     //insert self into map
     this->servers.insert(std::pair<size_t, Address>(this->hash, Address(host, port)));
@@ -40,8 +41,7 @@ static std::vector<std::string> explode_str(std::string input, char delim) {
     return arr;
 }
 
-char *KVServer::serialize_info() {
-    cout << this->port << endl;
+std::string KVServer::serialize_info() {
     std::string str = std::string(this->host) + ":" + std::to_string(this->port);
     return &str[0];
 }
@@ -53,7 +53,6 @@ static Address deserialize_info(std::string str) {
 
 
 void KVServer::recv_func(std::string res) {
-    cout << "str:" << res << endl;
     //TODO once we receive a response from server, add this information to our map
     
     std::vector<std::string> addresses = explode_str(res, ARR_DELIM);
@@ -74,7 +73,12 @@ void KVServer::send_seed_func(char *host, int port) {
     //connect to seed
     cli.conn(host, port);
     //TODO send our host and port
-    cli.send_data("erer\0", 5);
+    std::string temp = this->serialize_info();
+    cout << temp << endl;
+
+    char *serial = &temp[0];
+
+    cli.send_data(serial, strlen(serial) + 1);
     //wait for information (list of servers in ring) from seed server
     std::string res = cli.recv_data();
 
@@ -85,15 +89,17 @@ void KVServer::send_seed_func(char *host, int port) {
     this->recv_func(res);
 }
 
-void KVServer::bootstrap(std::vector<KVServer> seeds) {
+void KVServer::bootstrap(std::vector<Address> seeds) {
 
     //store vectof of threads so we can join them all at the end
     vector<std::thread> threads;
 
     for(auto &server : seeds) {
         //using &str[0] converts from std::string to char *
-        char *host = &(server.get_host())[0];
-        int port = server.get_port();
+        char *host = &(server.host)[0];
+        int port = server.port;
+
+        //cout << "boostrap: " << host << port << endl;
 
         //create new thread to send info to each seed server
         std::thread conn([this, host, port] {
@@ -109,8 +115,15 @@ void KVServer::bootstrap(std::vector<KVServer> seeds) {
 }
 
 void server_func(TCPSocketWrapper server, void *arg, std::string res) {
+    //if we receive empty packet, discard it
+    if(res.size() == 0) {
+        return;
+    }
+
     //super ratchet but watever
     KVServer *test = (KVServer *) arg;
+    cout << "Received: " << res << endl;
+
     //TODO when receive client's information, add it to our map, send client back 
     //our map of addresses.
 }

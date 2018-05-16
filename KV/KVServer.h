@@ -28,7 +28,7 @@ class KVServer {
         void listen();
         void send_membership();
 
-        void bootstrap(std::vector<KVServer> seeds);
+        void bootstrap(std::vector<Address> seeds);
 
     private:
         size_t hash;
@@ -43,7 +43,7 @@ class KVServer {
 
         void send_seed_func(char *host, int port);
 
-        char *serialize_info();
+        std::string serialize_info();
         //Address deserialize_info(std::string str);
 
 
