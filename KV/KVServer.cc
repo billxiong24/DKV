@@ -5,12 +5,12 @@
 size_t gen_hash(std::string host, int port);
 
 KVServer::KVServer(std::string host, int port) : host(string(host)), port(port) {
-    //insert self into map
 }
 
 void KVServer::init(char *redis_host, int redis_port) {
     this->context = redisConnect(redis_host, redis_port);
     this->hash = gen_hash(host, port);
+    //insert self into map
     this->servers.insert(std::pair<size_t, Address>(this->hash, Address(host, port)));
 }
 
@@ -108,9 +108,20 @@ void KVServer::bootstrap(std::vector<KVServer> seeds) {
     }
 }
 
+void server_func(TCPSocketWrapper server, void *arg, std::string res) {
+    //super ratchet but watever
+    KVServer *test = (KVServer *) arg;
+    //TODO when receive client's information, add it to our map, send client back 
+    //our map of addresses.
+}
+
 void KVServer::listen() {
     TCPServerWrapper server(this->port);
     server.start_server();
+
+    void *arg = (void *) this;
+
+    server.recv_data(arg, server_func);
 }
 
 void KVServer::send_membership() {
@@ -154,6 +165,15 @@ size_t gen_hash(std::string host, int port) {
     return hash_func(hash_str);
 }
 
+//void test_func(void *arg) {
+
+    //KVServer *test = (KVServer *) arg;
+
+    //cout << test->get_host() << endl;
+//}
+
 //int main() {
     //auto d = KVServer((char *) "127.0.0.1", 5656);
+
+    //test_func((void *) &d);
 //}
