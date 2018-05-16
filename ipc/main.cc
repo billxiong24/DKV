@@ -1,6 +1,7 @@
 #include "TCPClientWrapper.h"
 #include <iostream>
 #include <thread>
+#include <vector>
 using namespace std;
 void data_func(TCPSocketWrapper serv, std::string res) {
     cout << "str:" << res << endl;
@@ -25,14 +26,21 @@ void thread_func(char *host, int port) {
 int main(int argc, const char *argv[]) {
 
     char *host = (char *) "127.0.0.1";
-    std::thread first(thread_func, host, 7777);
-    //std::thread sec(thread_func, host, 7778);
+
+    vector<std::thread> threads;
+
+    for (int i = 0; i < 2; i++) {
+        std::thread first(thread_func, host, 7777 + i);
+        threads.push_back(std::move(first));
+    }
+
+    for(auto &t : threads) {
+        t.join();
+    }
 
 
-    first.detach();
-    //sec.detach();
 
-    while(true);
+    //while(true);
 
     return 0;
 }

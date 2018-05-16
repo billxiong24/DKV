@@ -27,7 +27,6 @@ void TCPClientWrapper::conn(char *host, int port) {
     }
 }
 
-
 bool TCPClientWrapper::recv_data(std::function<void(TCPSocketWrapper, std::string)> data_func) {
     return this->read_data(this->get_read_fd(), data_func);
 }
