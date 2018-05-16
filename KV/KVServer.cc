@@ -97,7 +97,17 @@ void KVServer::send_seed_func(char *host, int port) {
 
     TCPClientWrapper cli;
     //connect to seed
-    cli.conn(host, port);
+    try {
+        cli.conn(host, port);
+    }
+    catch(const char *msg) {
+        cout << msg << endl;
+        //couldn't connect to seed, timeout and wait again
+        sleep(5);
+        this->send_seed_func(host, port);
+        return;
+    }
+
     //TODO send our host and port
     std::string temp = this->serialize_info();
 
@@ -105,7 +115,15 @@ void KVServer::send_seed_func(char *host, int port) {
 
     cli.send_data(serial, strlen(serial) + 1);
     //wait for information (list of servers in ring) from seed server
-    std::string res = cli.recv_data();
+    std::string res;
+
+    try {
+        res = cli.recv_data();
+    }
+    catch(const char *msg) {
+        cout << msg << endl;
+        return;
+    }
 
     if(res.size() == 0) {
         puts("Failed to receive data");
