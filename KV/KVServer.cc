@@ -3,16 +3,17 @@
 #define DELIM ':'
 #define ARR_DELIM '$'
 size_t gen_hash(std::string host, int port);
+static std::string serialize(std::string host, int port); 
 
-KVServer::KVServer(std::string host, int port) : host(string(host)), port(port) {
-
+KVServer::KVServer(std::string host, int port) : host(host), port(port) {
+    this->map_lock = new std::mutex();
 }
 
 void KVServer::init(char *redis_host, int redis_port) {
     //this->context = redisConnect(redis_host, redis_port);
     this->hash = gen_hash(host, port);
     //insert self into map
-    this->servers.insert(std::pair<size_t, Address>(this->hash, Address(host, port)));
+    this->map_ins(this->hash, Address(host, port));
 }
 
 size_t KVServer::get_hash() {
@@ -41,9 +42,33 @@ static std::vector<std::string> explode_str(std::string input, char delim) {
     return arr;
 }
 
+static std::string serialize(std::string host, int port) {
+    std::string str = std::string(host) + ":" + std::to_string(port);
+    return str;
+}
+
 std::string KVServer::serialize_info() {
-    std::string str = std::string(this->host) + ":" + std::to_string(this->port);
-    return &str[0];
+    return serialize(this->host, this->port);
+}
+
+
+std::string KVServer::serialize_map() {
+
+    std::string ret;
+
+    map_lock->lock();
+    for(auto &pair : this->servers) {
+        Address addr = pair.second;
+        std::string addr_str = serialize(addr.host, addr.port);
+        ret += addr_str;
+        ret += ARR_DELIM;
+    }
+    //string will have an extra delimiter, remove it
+    map_lock->unlock();
+    ret.pop_back();
+    ret += '\0';
+
+    return ret;
 }
 
 static Address deserialize_info(std::string str) {
@@ -64,6 +89,7 @@ void KVServer::recv_func(std::string res) {
         //add server's address to our treemap of known addresses
         this->servers.insert(std::pair<size_t, Address>(addr_hash, addr));
     }
+
     //serv.send_data("response\0", 10);
 }
 
@@ -74,7 +100,6 @@ void KVServer::send_seed_func(char *host, int port) {
     cli.conn(host, port);
     //TODO send our host and port
     std::string temp = this->serialize_info();
-    cout << temp << endl;
 
     char *serial = &temp[0];
 
@@ -84,6 +109,7 @@ void KVServer::send_seed_func(char *host, int port) {
 
     if(res.size() == 0) {
         puts("Failed to receive data");
+        return;
     }
 
     this->recv_func(res);
@@ -99,7 +125,6 @@ void KVServer::bootstrap(std::vector<Address> seeds) {
         char *host = &(server.host)[0];
         int port = server.port;
 
-        //cout << "boostrap: " << host << port << endl;
 
         //create new thread to send info to each seed server
         std::thread conn([this, host, port] {
@@ -121,11 +146,20 @@ void server_func(TCPSocketWrapper server, void *arg, std::string res) {
     }
 
     //super ratchet but watever
-    KVServer *test = (KVServer *) arg;
-    cout << "Received: " << res << endl;
+    KVServer *kvs = (KVServer *) arg;
 
-    //TODO when receive client's information, add it to our map, send client back 
-    //our map of addresses.
+    Address deserial = deserialize_info(res);
+    size_t hash = gen_hash(deserial.host, deserial.port);
+    kvs->map_ins(hash, deserial);
+
+    Address test = kvs->map_get(hash);
+
+    //TODO send our map of addresses back to client
+    std::string serial_map = kvs->serialize_map();
+
+
+    //send client our map of addresses
+    server.send_data(&serial_map[0], serial_map.size());
 }
 
 void KVServer::listen() {
@@ -176,6 +210,25 @@ size_t gen_hash(std::string host, int port) {
     std::string hash_str = host + std::to_string(port);
     std::hash<std::string> hash_func;
     return hash_func(hash_str);
+}
+
+void KVServer::map_ins(size_t key, Address addr) {
+    map_lock->lock();
+    this->servers.insert(std::pair<size_t, Address>(key, addr));
+    map_lock->unlock();
+}
+
+Address KVServer::map_get(size_t key) {
+    map_lock->lock();
+    std::map<size_t, Address>::iterator it = this->servers.find(key);
+    map_lock->unlock();
+
+    //it->first is key, it->second is value
+    return it->second;
+}
+
+KVServer::~KVServer() {
+    delete this->map_lock;
 }
 
 //void test_func(void *arg) {
