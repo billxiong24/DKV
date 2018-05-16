@@ -15,7 +15,7 @@ class TCPSocketWrapper {
     public:
         TCPSocketWrapper();
         void send_data(const void *buf, size_t len);
-        bool read_data(int read_fd, std::function<void(TCPSocketWrapper, std::string)> data_func);
+        std::string read_data(int read_fd);
 
     protected:
         int get_read_fd();

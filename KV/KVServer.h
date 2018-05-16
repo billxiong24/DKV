@@ -6,13 +6,17 @@
 #include <map>
 #include <hiredis/hiredis.h>
 #include "../address/Address.h"
+#include "../ipc/TCPClientWrapper.h"
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <thread>
 using namespace std;
 
 class KVServer {
 
     public:
         KVServer(std::string host, int port);
-        KVServer deserialize_info(char *str);
 
         void init(char *redis_host, int redis_port);
         size_t get_hash();
@@ -31,13 +35,15 @@ class KVServer {
         std::map<size_t, Address> servers;
         std::string host;
         int port;
-        size_t init_hash(std::string host, int port);
+        void recv_func(std::string res);
+        //static size_t init_hash(std::string host, int port);
 
-        static size_t gen_hash_key(string str);
+        //static size_t gen_hash_key(string str);
 
         void send_seed_func(char *host, int port);
 
         char *serialize_info();
+        //Address deserialize_info(std::string str);
 
 
 };

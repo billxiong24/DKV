@@ -14,7 +14,7 @@ void TCPSocketWrapper::set_read_fd(int fd) {
     this->read_fd = fd;
 }
 
-bool TCPSocketWrapper::read_data(int read_fd, std::function<void(TCPSocketWrapper, std::string)> data_func) {
+std::string TCPSocketWrapper::read_data(int read_fd) {
 
     char buffer[1];
     buffer[0] = -1;
@@ -30,13 +30,14 @@ bool TCPSocketWrapper::read_data(int read_fd, std::function<void(TCPSocketWrappe
         }
         else if(num_read == 0) {
             close(read_fd);
-            return false;
+            res.clear();
+            return res;
         }
         res += buffer[0];
     }
 
-    data_func(*this, res);
-    return true;
+    //data_func(*this, res);
+    return res;
 }
 
 void TCPSocketWrapper::send_data(const void *buf, size_t len) {

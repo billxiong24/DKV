@@ -14,7 +14,7 @@ class TCPClientWrapper : public TCPSocketWrapper {
     public:
         TCPClientWrapper();
         void conn(char *host, int port);
-        bool recv_data(std::function<void(TCPSocketWrapper, std::string)> data_func);
+        std::string recv_data();
         //void send_data(const void *buf, size_t len);
 
     private:

@@ -1,11 +1,8 @@
 #include "KVServer.h"
-#include "../ipc/TCPClientWrapper.h"
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <thread>
 
 #define DELIM ':'
+#define ARR_DELIM '$'
+size_t gen_hash(std::string host, int port);
 
 KVServer::KVServer(std::string host, int port) : host(string(host)), port(port) {
     //insert self into map
@@ -13,7 +10,7 @@ KVServer::KVServer(std::string host, int port) : host(string(host)), port(port) 
 
 void KVServer::init(char *redis_host, int redis_port) {
     this->context = redisConnect(redis_host, redis_port);
-    this->hash = this->init_hash(host, port);
+    this->hash = gen_hash(host, port);
     this->servers.insert(std::pair<size_t, Address>(this->hash, Address(host, port)));
 }
 
@@ -29,8 +26,7 @@ int KVServer::get_port() {
     return this->port;
 }
 
-static std::vector<std::string> explode_str(char *str, char delim) {
-    auto input = std::string(str);
+static std::vector<std::string> explode_str(std::string input, char delim) {
 
     std::istringstream stream(input);
     std::string token;
@@ -50,15 +46,25 @@ char *KVServer::serialize_info() {
     return &str[0];
 }
 
-KVServer KVServer::deserialize_info(char *str) {
+static Address deserialize_info(std::string str) {
     std::vector<std::string> info = explode_str(str, DELIM);
-    return KVServer(info[0], std::stoi(info[1]));
+    return Address(info[0], std::stoi(info[1]));
 }
 
-void recv_func(TCPSocketWrapper serv, std::string res) {
+
+void KVServer::recv_func(std::string res) {
     cout << "str:" << res << endl;
     //TODO once we receive a response from server, add this information to our map
     
+    std::vector<std::string> addresses = explode_str(res, ARR_DELIM);
+
+    //loop through addresses and split into ip and port
+    for(auto &str_addr: addresses) {
+        Address addr = deserialize_info(str_addr);
+        size_t addr_hash = gen_hash(addr.host, addr.port);
+        //add server's address to our treemap of known addresses
+        this->servers.insert(std::pair<size_t, Address>(addr_hash, addr));
+    }
     //serv.send_data("response\0", 10);
 }
 
@@ -70,11 +76,13 @@ void KVServer::send_seed_func(char *host, int port) {
     //TODO send our host and port
     cli.send_data("erer\0", 5);
     //wait for information (list of servers in ring) from seed server
-    bool res = cli.recv_data(recv_func);
+    std::string res = cli.recv_data();
 
-    if(!res) {
+    if(res.size() == 0) {
         puts("Failed to receive data");
     }
+
+    this->recv_func(res);
 }
 
 void KVServer::bootstrap(std::vector<KVServer> seeds) {
@@ -138,17 +146,13 @@ void KVServer::put(char *key, char *value) {
     freeReplyObject(reply);
 }
 
-size_t KVServer::init_hash(std::string host, int port) {
+size_t gen_hash(std::string host, int port) {
     //concatenate host and port to use as hash string
     std::string hash_str = host + std::to_string(port);
-    return gen_hash_key(hash_str);
-}
-
-size_t KVServer::gen_hash_key(std::string str) {
     std::hash<std::string> hash_func;
-    return hash_func(str);
+    return hash_func(hash_str);
 }
 
-int main() {
-    auto d = KVServer((char *) "127.0.0.1", 5656);
-}
+//int main() {
+    //auto d = KVServer((char *) "127.0.0.1", 5656);
+//}
