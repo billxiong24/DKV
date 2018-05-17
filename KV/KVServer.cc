@@ -3,7 +3,6 @@
 #define DELIM ':'
 #define ARR_DELIM '$'
 size_t gen_hash(std::string host, int port);
-static std::string serialize(std::string host, int port); 
 
 KVServer::KVServer(std::string host, int port) : host(host), port(port) {
     this->map_lock = new std::mutex();
@@ -14,6 +13,13 @@ void KVServer::init(char *redis_host, int redis_port) {
     this->hash = gen_hash(host, port);
     //insert self into map
     this->map_ins(this->hash, Address(host, port));
+}
+
+
+const std::map<size_t, Address>& KVServer::get_servers() {
+
+    return this->servers;
+
 }
 
 size_t KVServer::get_hash() {
@@ -28,67 +34,41 @@ int KVServer::get_port() {
     return this->port;
 }
 
-static std::vector<std::string> explode_str(std::string input, char delim) {
-
-    std::istringstream stream(input);
-    std::string token;
-
-    std::vector<std::string> arr;
-
-    while(std::getline(stream, token, delim)) {
-        arr.push_back(token);
-    }
-
-    return arr;
-}
-
-static std::string serialize(std::string host, int port) {
-    std::string str = std::string(host) + ":" + std::to_string(port);
-    return str;
-}
-
 std::string KVServer::serialize_info() {
-    return serialize(this->host, this->port);
+    return this->serializer.serialize_addr(this->host, this->port);
 }
-
 
 std::string KVServer::serialize_map() {
 
     std::string ret;
-
     map_lock->lock();
-    for(auto &pair : this->servers) {
-        Address addr = pair.second;
-        std::string addr_str = serialize(addr.host, addr.port);
-        ret += addr_str;
-        ret += ARR_DELIM;
-    }
-    //string will have an extra delimiter, remove it
+    ret = this->serializer.serialize_map(this->servers);
     map_lock->unlock();
-    ret.pop_back();
-    ret += '\0';
 
     return ret;
 }
 
-static Address deserialize_info(std::string str) {
-    std::vector<std::string> info = explode_str(str, DELIM);
-    return Address(info[0], std::stoi(info[1]));
-}
-
-
 void KVServer::recv_func(std::string res) {
     //TODO once we receive a response from server, add this information to our map
     
-    std::vector<std::string> addresses = explode_str(res, ARR_DELIM);
+    std::vector<Address> addrs = this->serializer.deserialize_addr_arr(res);
 
     //loop through addresses and split into ip and port
-    for(auto &str_addr: addresses) {
-        Address addr = deserialize_info(str_addr);
+    for(auto &addr: addrs) {
         size_t addr_hash = gen_hash(addr.host, addr.port);
-        //add server's address to our treemap of known addresses
-        this->servers.insert(std::pair<size_t, Address>(addr_hash, addr));
+        //syncrhonously add server's address to our treemap of known addresses
+        this->map_ins(addr_hash, addr);
     }
+    
+    map_lock->lock();
+    for(auto &pair : this->servers) {
+        cout << pair.first << endl;
+        cout << pair.second.host << endl;
+        cout << pair.second.port << endl;
+    }
+
+    cout << "--------------" << endl;
+    map_lock->unlock();
 
     //serv.send_data("response\0", 10);
 }
@@ -143,7 +123,6 @@ void KVServer::bootstrap(std::vector<Address> seeds) {
         char *host = &(server.host)[0];
         int port = server.port;
 
-
         //create new thread to send info to each seed server
         std::thread conn([this, host, port] {
             this->send_seed_func(host, port);
@@ -166,15 +145,17 @@ void server_func(TCPSocketWrapper server, void *arg, std::string res) {
     //super ratchet but watever
     KVServer *kvs = (KVServer *) arg;
 
-    Address deserial = deserialize_info(res);
+    Address deserial = kvs->serializer.deserialize_addr(res);
+
     size_t hash = gen_hash(deserial.host, deserial.port);
     kvs->map_ins(hash, deserial);
 
     Address test = kvs->map_get(hash);
 
     //TODO send our map of addresses back to client
-    std::string serial_map = kvs->serialize_map();
+    std::string serial_map = kvs->serializer.serialize_map(kvs->get_servers());
 
+    cout << "Sending: " << serial_map << endl;
 
     //send client our map of addresses
     server.send_data(&serial_map[0], serial_map.size());

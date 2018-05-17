@@ -9,6 +9,7 @@
 #include "../address/Address.h"
 #include "../ipc/TCPClientWrapper.h"
 #include "../ipc/TCPServerWrapper.h"
+#include "../serial/KVSerialize.h"
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -19,6 +20,10 @@ class KVServer {
 
     public:
         KVServer(std::string host, int port);
+
+        KVSerialize serializer;
+
+        const std::map<size_t, Address>& get_servers();
 
         void init(char *redis_host, int redis_port);
         size_t get_hash();

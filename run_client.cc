@@ -11,7 +11,7 @@ int main(void) {
 
     std::vector<Address> addr;
     addr.push_back(Address(std::string(host), 7777));
-    //addr.push_back(Address(std::string(host), 7778));
+    addr.push_back(Address(std::string(host), 7778));
 
     s1.bootstrap(addr);
 

@@ -1,4 +1,7 @@
 #include "KV/KVServer.h"
+#include <thread>
+
+
 
 
 int main(int argc, char **argv) {
@@ -8,9 +11,20 @@ int main(int argc, char **argv) {
     //KVServer s1 = KVServer(host, 5656);
 
     KVServer seed = KVServer(host, atoi(argv[1]));
+    KVServer *ptr = &seed;
     seed.init(host, 6379);
 
-    seed.listen();
-    
+    std::thread listen([ptr] {
+        ptr->listen();
+    });
+
+    cout << "hello" << endl;
+
+
+    listen.detach();
+
+    puts("hello world");
+
+    while(true);
     return 0;
 }
