@@ -1,7 +1,8 @@
 #include "KVServer.h"
 
-#define DELIM ':'
-#define ARR_DELIM '$'
+#define READ "READ"
+#define WRITE "WRITE"
+
 size_t gen_hash(std::string host, int port);
 
 KVServer::KVServer(std::string host, int port) : host(host), port(port) {
@@ -15,11 +16,8 @@ void KVServer::init(char *redis_host, int redis_port) {
     this->map_ins(this->hash, Address(host, port));
 }
 
-
 const std::map<size_t, Address>& KVServer::get_servers() {
-
     return this->servers;
-
 }
 
 size_t KVServer::get_hash() {
@@ -60,16 +58,15 @@ void KVServer::recv_func(std::string res) {
         this->map_ins(addr_hash, addr);
     }
     
-    map_lock->lock();
-    for(auto &pair : this->servers) {
-        cout << pair.first << endl;
-        cout << pair.second.host << endl;
-        cout << pair.second.port << endl;
-    }
+    //map_lock->lock();
+    //for(auto &pair : this->servers) {
+        //cout << pair.first << endl;
+        //cout << pair.second.host << endl;
+        //cout << pair.second.port << endl;
+    //}
 
-    cout << "--------------" << endl;
-    map_lock->unlock();
-
+    //cout << "--------------" << endl;
+    //map_lock->unlock();
     //serv.send_data("response\0", 10);
 }
 
@@ -109,7 +106,6 @@ void KVServer::send_seed_func(char *host, int port) {
         puts("Failed to receive data");
         return;
     }
-
     this->recv_func(res);
 }
 
@@ -136,29 +132,53 @@ void KVServer::bootstrap(std::vector<Address> seeds) {
     }
 }
 
+bool starts_with(std::string str, std::string prefix) {
+
+    //convert str to uppercase
+    for (auto & c: str) {
+        c = toupper(c);
+    }
+
+    return !str.compare(0, prefix.size(), prefix);
+}
+
+//this function handles all received packets (boostrap, read req, write req, etc.)
 void server_func(TCPSocketWrapper server, void *arg, std::string res) {
     //if we receive empty packet, discard it
     if(res.size() == 0) {
         return;
     }
 
-    //super ratchet but watever
-    KVServer *kvs = (KVServer *) arg;
+    //handle read request
+    if(starts_with(res, READ)) {
+    
+    }
+    //handle write requst
+    else if(starts_with(res, WRITE)) {
+    
+    }
+    //client send its information for us to store in our map
+    else {
+        //super ratchet but watever
+        KVServer *kvs = (KVServer *) arg;
 
-    Address deserial = kvs->serializer.deserialize_addr(res);
+        Address deserial = kvs->serializer.deserialize_addr(res);
 
-    size_t hash = gen_hash(deserial.host, deserial.port);
-    kvs->map_ins(hash, deserial);
+        size_t hash = gen_hash(deserial.host, deserial.port);
+        kvs->map_ins(hash, deserial);
 
-    Address test = kvs->map_get(hash);
+        Address test = kvs->map_get(hash);
 
-    //TODO send our map of addresses back to client
-    std::string serial_map = kvs->serializer.serialize_map(kvs->get_servers());
+        //TODO send our map of addresses back to client
+        std::string serial_map = kvs->serializer.serialize_map(kvs->get_servers());
 
-    cout << "Sending: " << serial_map << endl;
+        cout << "Sending: " << serial_map << endl;
 
-    //send client our map of addresses
-    server.send_data(&serial_map[0], serial_map.size());
+        //send client our map of addresses
+        server.send_data(&serial_map[0], serial_map.size());
+    
+    }
+
 }
 
 void KVServer::listen() {

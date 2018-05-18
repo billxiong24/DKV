@@ -17,6 +17,14 @@ static std::vector<std::string> explode_str(std::string input, char delim) {
     return arr;
 }
 
+//std::string KVSerialize::serialize_read_req(std::string key) {
+
+//}
+
+//std::string KVSerialize::serialize_write_req(std::string key) {
+    
+//}
+
 std::string KVSerialize::serialize_addr(std::string host, int port) {
     std::string str = std::string(host) + ":" + std::to_string(port);
     return str;

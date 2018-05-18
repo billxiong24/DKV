@@ -18,12 +18,8 @@ int main(int argc, char **argv) {
         ptr->listen();
     });
 
-    cout << "hello" << endl;
-
 
     listen.detach();
-
-    puts("hello world");
 
     while(true);
     return 0;
