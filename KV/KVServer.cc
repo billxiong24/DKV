@@ -151,6 +151,9 @@ void server_func(TCPSocketWrapper server, void *arg, std::string res) {
 
     //handle read request
     if(starts_with(res, READ)) {
+        //TODO check key's position on hashing ring
+        //if not us, then forward to machine who can serve read request.
+        //else respond with data
     
     }
     //handle write requst
@@ -178,7 +181,6 @@ void server_func(TCPSocketWrapper server, void *arg, std::string res) {
         server.send_data(&serial_map[0], serial_map.size());
     
     }
-
 }
 
 void KVServer::listen() {
