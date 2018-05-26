@@ -8,7 +8,8 @@
 size_t gen_hash(std::string host, int port);
 
 KVServer::KVServer(std::string host, int port) : host(host), port(port) {
-    this->map_lock = new std::mutex();
+    //this->map_lock = new std::mutex();
+    this->ring = new KVRing<Address>(1);
 }
 
 void KVServer::init(char *redis_host, int redis_port) {
@@ -41,9 +42,9 @@ std::string KVServer::serialize_info() {
 std::string KVServer::serialize_map() {
 
     std::string ret;
-    map_lock->lock();
+    //map_lock->lock();
     ret = this->serializer.serialize_map(this->servers);
-    map_lock->unlock();
+    //map_lock->unlock();
 
     return ret;
 }
@@ -179,8 +180,6 @@ void server_func(TCPSocketWrapper server, void *arg, std::string res) {
         size_t hash = gen_hash(deserial.host, deserial.port);
         kvs->map_ins(hash, deserial);
 
-        Address test = kvs->map_get(hash);
-
         //TODO send our map of addresses back to client
         std::string serial_map = kvs->serializer.serialize_map(kvs->get_servers());
 
@@ -243,19 +242,22 @@ size_t gen_hash(std::string host, int port) {
 }
 
 void KVServer::map_ins(size_t key, Address addr) {
-    map_lock->lock();
-    this->servers.insert(std::pair<size_t, Address>(key, addr));
-    map_lock->unlock();
+    //map_lock->lock();
+    //this->servers.insert(std::pair<size_t, Address>(key, addr));
+    //map_lock->unlock();
+    
+    this->ring->add(addr);
 }
 
-Address KVServer::map_get(size_t key) {
-    map_lock->lock();
-    std::map<size_t, Address>::iterator it = this->servers.find(key);
-    map_lock->unlock();
+//Address KVServer::map_get(size_t key) {
+    //map_lock->lock();
+    //std::map<size_t, Address>::iterator it = this->servers.find(key);
+    //return this->ring->get(key);
+    //map_lock->unlock();
 
     //it->first is key, it->second is value
-    return it->second;
-}
+    //return it->second;
+//}
 
 KVServer::~KVServer() {
     delete this->map_lock;

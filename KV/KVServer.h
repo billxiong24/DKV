@@ -10,6 +10,7 @@
 #include "../ipc/TCPClientWrapper.h"
 #include "../ipc/TCPServerWrapper.h"
 #include "../serial/KVSerialize.h"
+#include "KVRing.h"
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -37,7 +38,7 @@ class KVServer {
 
         void bootstrap(std::vector<Address> seeds);
         void map_ins(size_t, Address);
-        Address map_get(size_t);
+        //Address map_get(size_t);
 
         ~KVServer();
 
@@ -46,6 +47,8 @@ class KVServer {
         size_t hash;
         redisContext *context;
         std::map<size_t, Address> servers;
+
+        KVRing<Address> *ring;
 
         std::string host;
         int port;
