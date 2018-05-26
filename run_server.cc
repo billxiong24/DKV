@@ -1,9 +1,5 @@
 #include "KV/KVServer.h"
 #include <thread>
-
-
-
-
 int main(int argc, char **argv) {
 
     char *host = (char *) "127.0.0.1";

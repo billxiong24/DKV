@@ -3,6 +3,12 @@
 #include <thread>
 #include <vector>
 using namespace std;
+
+struct Test {
+    int a;
+    int b;
+};
+
 void data_func(TCPSocketWrapper serv, std::string res) {
     cout << "str:" << res << endl;
     
@@ -13,7 +19,11 @@ void thread_func(char *host, int port) {
     TCPClientWrapper cli;
     cli.conn(host, port);
     while(true) {
-        cli.send_data("erer\0", 5);
+        struct Test t;
+        t.a = 5;
+        t.b = 6;
+        
+        cli.send_data((void *) &t, sizeof(struct Test));
         std::string res = cli.recv_data();
         cout << res << endl;
         if(res.empty()) {
@@ -30,7 +40,7 @@ int main(int argc, const char *argv[]) {
 
     vector<std::thread> threads;
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
         std::thread first(thread_func, host, 7777 + i);
         threads.push_back(std::move(first));
     }

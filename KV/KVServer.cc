@@ -1,7 +1,9 @@
 #include "KVServer.h"
 
-#define READ "READ"
-#define WRITE "WRITE"
+#define READ "R"
+#define WRITE "W"
+#define READ_REPLICATE "RREP"
+#define WRITE_REPLICATE "WREP"
 
 size_t gen_hash(std::string host, int port);
 
@@ -158,6 +160,13 @@ void server_func(TCPSocketWrapper server, void *arg, std::string res) {
     }
     //handle write requst
     else if(starts_with(res, WRITE)) {
+        //TODO check position on hashing ring
+        //check preference list, forward the request to those nodes
+    
+    }
+    else if(starts_with(res, WRITE_REPLICATE)) {
+        //TODO this is when a coordinator asks this machine to replicate a write request.
+        //write to redis, and reply back to coordinator. (sloppy quorum)
     
     }
     //client send its information for us to store in our map
@@ -192,9 +201,9 @@ void KVServer::listen() {
     server.recv_data(arg, server_func);
 }
 
-void KVServer::send_membership() {
+//void KVServer::send_membership() {
 
-}
+//}
 
 std::string KVServer::get(char *key) {
     if(!key) {

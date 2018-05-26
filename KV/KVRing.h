@@ -11,11 +11,7 @@ class KVRing {
 
             for(V &node : nodes) {
                 //taking advantage of overriden operator in Address class
-                std::string str = node;
-                for(int i = 0; i < replicas; i++) {
-                    size_t hash = this->hash_func(str + std::to_string(i));
-                    this->ring.insert(std::pair<size_t, V>(hash, node));
-                }
+                this->add_node(node);
             }
         }
 
@@ -30,21 +26,32 @@ class KVRing {
             }
 
             else {
-            
+                //itup points to the next element, which is the node that should handle
+                //this particular key
+                return itup->second;
             }
-
-            //for (; itup != this->ring.end(); ++itup) {
-                ////std::cout << itup->first << " => " << itup->second << '\n';
-            //}
         }
 
+        void remove(V node) {
+            std::string str = node;
+            for(int i = 0; i < this->num_replicas; i++) {
+                size_t hash = this->hash_func(str + std::to_string(i));
+                this->ring.erase(hash);
+            }
+        }
+
+        void add_node(V node) {
+            std::string str = node;
+            for(int i = 0; i < this->num_replicas; i++) {
+                size_t hash = this->hash_func(str + std::to_string(i));
+                this->ring.insert(std::pair<size_t, V>(hash, node));
+            }
+        }
 
     private:
         int num_replicas;
         std::map<size_t, V> ring;
         std::hash<std::string> hash_func;
-
-
 };
 
 //#include "KVring.cc"
