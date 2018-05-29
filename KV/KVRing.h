@@ -17,6 +17,11 @@ class KVRing {
             }
         }
 
+        const std::map<size_t, V>& get_map() {
+            //TODO make this unmodifiable;
+            return this->ring;
+        }
+
 
         V get(std::string key) {
             this->map_lock.lock();

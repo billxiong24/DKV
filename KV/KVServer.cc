@@ -20,7 +20,7 @@ void KVServer::init(char *redis_host, int redis_port) {
 }
 
 const std::map<size_t, Address>& KVServer::get_servers() {
-    return this->servers;
+    return this->ring->get_map();
 }
 
 size_t KVServer::get_hash() {
@@ -93,7 +93,10 @@ void KVServer::send_seed_func(char *host, int port) {
 
     char *serial = &temp[0];
 
+    
+    puts(serial);
     cli.send_data(serial, strlen(serial) + 1);
+    puts("received data in seed");
     //wait for information (list of servers in ring) from seed server
     std::string res;
 
@@ -123,10 +126,10 @@ void KVServer::bootstrap(std::vector<Address> seeds) {
         int port = server.port;
 
         //create new thread to send info to each seed server
+        puts("looping through seeds");
         std::thread conn([this, host, port] {
             this->send_seed_func(host, port);
         });
-
         threads.push_back(std::move(conn));
     }
 
@@ -172,12 +175,14 @@ void server_func(TCPSocketWrapper server, void *arg, std::string res) {
     }
     //client send its information for us to store in our map
     else {
+        puts("im here received anon packet");
         //super ratchet but watever
         KVServer *kvs = (KVServer *) arg;
 
         Address deserial = kvs->serializer.deserialize_addr(res);
 
         size_t hash = gen_hash(deserial.host, deserial.port);
+        puts("inserting into map");
         kvs->map_ins(hash, deserial);
 
         //TODO send our map of addresses back to client
@@ -260,7 +265,7 @@ void KVServer::map_ins(size_t key, Address addr) {
 //}
 
 KVServer::~KVServer() {
-    delete this->map_lock;
+    //delete this->map_lock;
 }
 
 //void test_func(void *arg) {

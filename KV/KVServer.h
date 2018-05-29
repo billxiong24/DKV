@@ -43,7 +43,6 @@ class KVServer {
         ~KVServer();
 
     private:
-        std::mutex *map_lock;
         size_t hash;
         redisContext *context;
         std::map<size_t, Address> servers;
