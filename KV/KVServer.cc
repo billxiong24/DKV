@@ -42,9 +42,7 @@ std::string KVServer::serialize_info() {
 std::string KVServer::serialize_map() {
 
     std::string ret;
-    //map_lock->lock();
-    ret = this->serializer.serialize_map(this->servers);
-    //map_lock->unlock();
+    ret = this->serializer.serialize_map(this->ring->get_map());
 
     return ret;
 }
@@ -60,17 +58,6 @@ void KVServer::recv_func(std::string res) {
         //syncrhonously add server's address to our treemap of known addresses
         this->map_ins(addr_hash, addr);
     }
-    
-    //map_lock->lock();
-    //for(auto &pair : this->servers) {
-        //cout << pair.first << endl;
-        //cout << pair.second.host << endl;
-        //cout << pair.second.port << endl;
-    //}
-
-    //cout << "--------------" << endl;
-    //map_lock->unlock();
-    //serv.send_data("response\0", 10);
 }
 
 void KVServer::send_seed_func(char *host, int port) {
@@ -175,7 +162,6 @@ void server_func(TCPSocketWrapper server, void *arg, std::string res) {
     }
     //client send its information for us to store in our map
     else {
-        puts("im here received anon packet");
         //super ratchet but watever
         KVServer *kvs = (KVServer *) arg;
 
@@ -186,7 +172,7 @@ void server_func(TCPSocketWrapper server, void *arg, std::string res) {
         kvs->map_ins(hash, deserial);
 
         //TODO send our map of addresses back to client
-        std::string serial_map = kvs->serializer.serialize_map(kvs->get_servers());
+        std::string serial_map = kvs->serialize_map();
 
         cout << "Sending: " << serial_map << endl;
 

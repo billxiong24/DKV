@@ -1,5 +1,6 @@
 #ifndef KVRING_H 
 #define KVRING_H 
+#include <iostream>
 #include <map>
 #include <vector>
 #include <mutex>
@@ -22,7 +23,31 @@ class KVRing {
             return this->ring;
         }
 
+        std::vector<V> get_pref_list(std::string key, int num) {
+            this->map_lock.lock();
+            size_t hash = this->hash_func(key);
+            typename std::map<size_t, V>::iterator itup = this->ring.upper_bound(hash);
 
+            std::vector<V> ret;
+
+            for (int i = 0; i < num; i++) {
+                if(itup == this->ring.end()) {
+                    itup = ring.first();
+                    i--;
+                    continue;
+                }
+
+                ret.push_back(itup->second);
+                itup = itup->next;
+            }
+        
+            this->map_lock.unlock();
+
+            return ret;
+        }
+
+
+        //this string actually is object of type V, we convert it by overloading string operator
         V get(std::string key) {
             this->map_lock.lock();
             size_t hash = this->hash_func(key);
@@ -60,7 +85,17 @@ class KVRing {
                 size_t hash = this->hash_func(str + std::to_string(i));
                 this->ring.insert(std::pair<size_t, V>(hash, node));
             }
+
+            for(auto &pair : this->ring) {
+
+                std::cout << pair.first << std::endl;
+                std::string str = pair.second;
+                std::cout << str << std::endl;
+            }
+
+            std::cout << "-----------------" << std::endl;
             this->map_lock.unlock();
+
         }
 
     private:

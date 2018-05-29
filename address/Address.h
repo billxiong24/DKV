@@ -11,7 +11,7 @@ class Address {
         }
 
         operator std::string () const {
-            return this->host + std::to_string(this->port);
+            return this->host + ":" + std::to_string(this->port);
         }
 
         std::string host;
